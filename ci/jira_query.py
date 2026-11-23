@@ -81,6 +81,17 @@ def fetch_pr_data():
         if github_token:
             gh_req.add_header('Authorization', f'Bearer {github_token}')
 
+        # FORK TEST ONLY: report the rate limit GitHub applies with and without the token.
+        print(f'DEBUG GITHUB_TOKEN set: {bool(github_token)}')
+        for name, req in (('unauthenticated', 'https://api.github.com/rate_limit'),
+                          ('script request', gh_req)):
+            try:
+                with urllib.request.urlopen(req) as resp:  # nosec
+                    print(f'DEBUG {name}: x-ratelimit-limit={resp.headers.get("x-ratelimit-limit")}'
+                          f' remaining={resp.headers.get("x-ratelimit-remaining")}')
+            except urllib.error.HTTPError as error:
+                print(f'DEBUG {name}: HTTP {error.code} {error.reason}')
+
         # We occasionally see this fail with rate-limit-exceeded, if that happens then wait for a
         # while and re-try once.
         try:
